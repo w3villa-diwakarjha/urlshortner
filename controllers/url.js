@@ -29,7 +29,40 @@ async function handleGetAnalytics(req,res){
     return res.json({totalClicks: result.visitHistory.length, analytics: result.visitHistory})
 }
 
+const createshortId= async (req,res)=>{
+    const shortid = req.params.shortId;
+    try {
+        // Use $push to add a new timestamp to visitHistory
+        const entry = await URL.findOneAndUpdate(
+            { shortId: shortid },
+            {
+                $push: {
+                    visitHistory: {
+                        timestamp: Date.now()
+                    },
+                },
+            },
+            { new: true }
+        );
+        if (!entry) {
+            return res.send("Bad Shortid");
+        }
+
+        if (entry && entry.redirectURL) {
+            // Redirect to the URL
+            res.send(entry);
+        } else {
+            // Handle the case when the redirectURL is not defined
+            return res.status(404).send('Redirect URL not found');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        return res.status(500).send('Internal server error');
+    }
+}
+
 module.exports = {
     generateNewShortURL,
     handleGetAnalytics,
+    createshortId
 }
